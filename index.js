@@ -193,3 +193,127 @@ aws
 .then(data => data +70)
 .then(data => console.log(data))
 .catch(err => console.log(err))
+
+
+
+class PromiseExample2{
+    constructor(executer){
+        this.state = states.pending
+        this.executeFunctionChain = []
+        
+        try{
+            executer(this.onResolve.bind(this), this.onReject.bind(this))
+        }
+        catch(err){
+            this.onReject(err).bind(this)
+        }
+    }
+    then(onResolved){
+        if(typeof onResolved === 'function'){
+            this.executeFunctionChain.push(onResolved)
+        }
+        return this;
+    }
+    catch(onReject){
+        this.onReject(onReject)
+    }
+
+    onResolve(value){
+        let storeValue = value;
+        try{
+            this.executeFunctionChain.forEach(fn => {
+                storeValue = fn(storeValue)
+            })
+            this.state = states.resolved
+        }
+        catch(err){
+            this.onReject(err)
+        }
+    }
+
+    onReject(err){
+        this.state = states.rejected
+        this.value =err;
+        console.log(this.value)
+    }
+}
+
+const www = new PromiseExample2((resolve, reject) => {
+    try{
+        setTimeout(() => {
+            resolve(500)
+        },3000)
+    }
+    catch(err){
+        reject(err)
+    }
+})
+
+www
+.then(data => data + 20)
+.then(data => data + 50)
+.then(data => data + 70)
+.then(data => console.log(data))
+
+
+
+const west = (text, callback) => {
+    try{
+        setTimeout(() => {
+            callback(null, text)
+        },2000)
+    }
+    catch(err){
+        callback(err, null)
+    }
+}
+
+west("man", (err,text) => {
+    console.log(text)
+})
+
+
+/**
+ * 
+ * @param {Array<Promise>} arr 
+ */
+const all = (promiseArr) => {
+    const results = []
+    const merged = promiseArr.reduce((acc,p) => {
+        acc.then(() => p).then(r => results.push(r))
+        return acc;
+    }, Promise.resolve(null))
+
+    return merged.then(() => results)
+}
+
+
+const s = (num) => {
+    return new Promise(resolve => {
+        setTimeout(() => {
+            resolve(num)
+        },num * 100)
+    })
+}
+
+const p3 = new Promise((res, rej) => { setTimeout(res, 4000, 'baz') });
+const PromiseAll = (psArray) => {
+    if(psArray.length <=0) return Promise.resolve([])
+    const [head, ...tail] = psArray;
+    return head.then(result => {
+        return PromiseAll(tail).then(results => [result, ...results ])
+    })
+}
+
+
+
+PromiseAll([Promise.resolve(500), p3])
+.then( ([a1,a2]) => console.log(a1,a2))
+
+
+
+
+
+
+
+
